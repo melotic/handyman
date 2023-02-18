@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::config::Configuration;
 use color_eyre::{eyre::Context, Help, Result};
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 const CONFIG_DIR: &str = "/etc/handyman/config.d";
 
@@ -35,9 +35,17 @@ fn read_configs() -> Result<Vec<Configuration>> {
         .with_context(|| "failed to read the configuration directory")
         .with_suggestion(|| "ensure that the configuration directory exists")?
     {
-        let entry = entry
-            .with_context(|| "failed to read the configuration directory")
-            .with_suggestion(|| "ensure that the configuration directory exists")?;
+        // If we can't read get the entry, we'll just skip it and warn the user
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(error) => {
+                error!(
+                    "Failed to read configuration directory entry: {error}",
+                    error = error
+                );
+                continue;
+            }
+        };
 
         let path = entry.path();
 
@@ -49,15 +57,30 @@ fn read_configs() -> Result<Vec<Configuration>> {
             continue;
         }
 
-        let config = std::fs::read_to_string(&path)
-            .with_context(|| "failed to read the configuration file")
-            .with_suggestion(|| "ensure that the configuration file exists")?;
+        let parsed_config = try_parse_config(&path);
 
-        let config: Configuration =
-            toml::from_str(&config).with_context(|| "failed to parse the configuration file")?;
-
-        configs.push(config);
+        if let Ok(config) = parsed_config {
+            configs.push(config);
+            info!("Loaded configuration {path}", path = path.display());
+        } else {
+            error!(
+                "Failed to load configuration {path}: {error}",
+                path = path.display(),
+                error = parsed_config.unwrap_err()
+            );
+        }
     }
 
     Ok(configs)
+}
+
+fn try_parse_config(path: &std::path::PathBuf) -> Result<Configuration> {
+    let config = std::fs::read_to_string(&path)
+        .with_context(|| "failed to read the configuration file")
+        .with_suggestion(|| "ensure that the configuration file exists")?;
+
+    let config: Configuration =
+        toml::from_str(&config).with_context(|| "failed to parse the configuration file")?;
+
+    Ok(config)
 }
