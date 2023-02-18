@@ -1,22 +1,44 @@
+use std::{fs, process::exit};
+
+use clap::Parser;
+use color_eyre::{eyre::Context, owo_colors::OwoColorize, Help, Result};
+use commands::systemd;
+use config::Configuration;
+
+pub mod cli;
+pub mod commands;
 pub mod config;
 
-fn main() {
-    let config_str = r#"
-name = "example"
-interval = 5
+fn main() -> Result<()> {
+    color_eyre::install()?;
 
-[[http]]
-name = "web server"
-url = "http://localhost:8080"
-timeout = 5
+    let cli = cli::Cli::parse();
 
-[[handlers]]
-name = "restart web server docker container"
-state = "failed"
-command = "docker restart example"
-    "#;
+    match cli.command() {
+        cli::Command::CheckConfig {
+            config,
+            print_syntax,
+        } => {
+            let config_str = fs::read_to_string(config)
+                .with_context(|| "failed to read the configuration file")
+                .with_suggestion(|| "ensure that the configuration file exists")?;
 
-    let config: config::Configuration = toml::from_str(config_str).unwrap();
+            let status = commands::check_config::check_config(&config_str, print_syntax);
 
-    println!("{:#?}", config);
+            if status.is_ok() {
+                println!("{config} {ok} ✅", ok = "ok".bold().green());
+            } else {
+                println!("{config} {error} ❌", error = "error".bold().red());
+                println!("{}", status.as_ref().unwrap_err());
+            }
+
+            exit(status.map(|_| 0).unwrap_or(1));
+        }
+        cli::Command::Systemd => {
+            tracing_subscriber::fmt::init();
+            systemd::run_service()?;
+        }
+    }
+
+    Ok(())
 }

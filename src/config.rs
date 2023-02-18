@@ -20,6 +20,27 @@ macro_rules! healthchecks {
 
             $( pub $config_name: Option<Vec<$healthcheck_name>>, )*
         }
+
+        // generate getters for name, interval, handlers, and all healthchecks
+        impl Configuration {
+            pub fn name(&self) -> Option<&String> {
+                self.name.as_ref()
+            }
+
+            pub fn interval(&self) -> Option<u32> {
+                self.interval
+            }
+
+            pub fn handlers(&self) -> Option<&Vec<Handler>> {
+                self.handlers.as_ref()
+            }
+
+            $(
+                pub fn $config_name(&self) -> Option<&Vec<$healthcheck_name>> {
+                    self.$config_name.as_ref()
+                }
+            )*
+        }
     };
 }
 
@@ -29,6 +50,24 @@ pub struct Handler {
     command: String,
     state: HealthCheckState,
     timeout: Option<u32>,
+}
+
+impl Handler {
+    pub fn name(&self) -> Option<&String> {
+        self.name.as_ref()
+    }
+
+    pub fn command(&self) -> &str {
+        self.command.as_ref()
+    }
+
+    pub fn state(&self) -> &HealthCheckState {
+        &self.state
+    }
+
+    pub fn timeout(&self) -> Option<u32> {
+        self.timeout
+    }
 }
 
 #[derive(Debug, Deserialize)]
