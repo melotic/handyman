@@ -2,16 +2,32 @@ use std::path::{Path, PathBuf};
 
 use crate::config::Configuration;
 use color_eyre::{eyre::Context, Help, Result};
-use tracing::{error, info, warn};
+use tracing::{error, info, metadata::LevelFilter, warn};
+use tracing_subscriber::prelude::*;
 
 const CONFIG_DIR: &str = "/etc/handyman/config.d";
 
 pub fn run_service() -> Result<()> {
+    // install jouranld tracing
+    setup_tracing();
+
     info!("Starting Handyman service");
 
-    let _configurations = read_configs()?;
+    let configurations = read_configs()?;
 
     Ok(())
+}
+
+fn setup_tracing() {
+    let stdout = tracing_subscriber::fmt::layer().pretty();
+
+    let journald = tracing_journald::layer().ok();
+
+    let subscriber = tracing_subscriber::registry()
+        .with(journald.with_filter(LevelFilter::INFO))
+        .with(stdout);
+
+    tracing::subscriber::set_global_default(subscriber).unwrap();
 }
 
 fn read_configs() -> Result<Vec<Configuration>> {
