@@ -34,23 +34,23 @@ macro_rules! healthchecks {
         #[derive(Debug, Deserialize)]
         pub struct Configuration {
             name: Option<String>,
-            interval: Option<u32>,
-            handlers: Option<Vec<Handler>>,
+            interval: Option<u64>,
+            handlers: Vec<Handler>,
 
             $( pub $config_name: Option<Vec<$healthcheck_name>>, )*
         }
 
         // generate getters for name, interval, handlers, and all healthchecks
         impl Configuration {
-            pub fn name(&self) -> Option<&String> {
-                self.name.as_ref()
+            pub fn name(&self) -> Option<&str> {
+                self.name.as_deref()
             }
 
-            pub fn interval(&self) -> Option<u32> {
+            pub fn interval(&self) -> Option<u64> {
                 self.interval
             }
 
-            pub fn handlers(&self) -> Option<&Vec<Handler>> {
+            pub fn handlers(&self) -> &Vec<Handler> {
                 self.handlers.as_ref()
             }
 
@@ -72,16 +72,16 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub fn name(&self) -> Option<&String> {
-        self.name.as_ref()
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
     }
 
     pub fn command(&self) -> &str {
         self.command.as_ref()
     }
 
-    pub fn state(&self) -> &HealthCheckState {
-        &self.state
+    pub fn state(&self) -> HealthCheckState {
+        self.state
     }
 
     pub fn timeout(&self) -> Option<u32> {
@@ -89,7 +89,7 @@ impl Handler {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Copy, Clone)]
 pub enum HealthCheckState {
     #[serde(rename = "ok")]
     Ok,

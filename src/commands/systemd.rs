@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::config::Configuration;
+use crate::{config::Configuration, service::handyman};
 use color_eyre::{eyre::Context, Help, Result};
 use tracing::{error, info, metadata::LevelFilter, warn};
 use tracing_subscriber::prelude::*;
@@ -13,7 +13,8 @@ pub fn run_service() -> Result<()> {
 
     info!("Starting Handyman service");
 
-    let configurations = read_configs()?;
+    let configs = read_configs()?;
+    handyman::start_service(configs);
 
     Ok(())
 }

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
-use tracing::Instrument;
+use tracing::{debug, error, info_span, Instrument};
 
 use crate::{
     config::{HealthCheckState, Http},
@@ -21,13 +21,17 @@ impl Default for HttpHealthCheck {
 }
 
 impl HttpHealthCheck {
-    async fn check(&self, config: &Http) -> HealthCheckState {
+    async fn check_inner(&self, config: &Http) -> HealthCheckState {
         let request = self
             .client
             .get(config.url())
             .timeout(Duration::from_secs(config.timeout().unwrap_or(u64::MAX)));
 
+        debug!(request = debug(&request));
+
         let response = request.send().await;
+
+        debug!(response = debug(&response));
 
         match response {
             Ok(response) => {
@@ -38,7 +42,7 @@ impl HttpHealthCheck {
                 }
             }
             Err(error) => {
-                tracing::error!("Failed to make request: {error}");
+                error!("Failed to make request: {error}");
                 HealthCheckState::Failed
             }
         }
@@ -50,8 +54,8 @@ impl HealthCheck for HttpHealthCheck {
     type Config = Http;
 
     async fn check(&self, config: &Self::Config) -> HealthCheckState {
-        self.check(config)
-            .instrument(tracing::info_span!(
+        self.check_inner(config)
+            .instrument(info_span!(
                 "http_healthcheck",
                 url = config.url(),
                 name = config.name()
@@ -75,7 +79,7 @@ mod tests {
             None,
         );
 
-        let result = healthcheck.check(&config).await;
+        let result = healthcheck.check_inner(&config).await;
 
         assert_eq!(result, HealthCheckState::Ok);
     }
@@ -90,7 +94,7 @@ mod tests {
             None,
         );
 
-        let result = healthcheck.check(&config).await;
+        let result = healthcheck.check_inner(&config).await;
 
         assert_eq!(result, HealthCheckState::Failed);
     }
@@ -105,7 +109,7 @@ mod tests {
             Some(1),
         );
 
-        let result = healthcheck.check(&config).await;
+        let result = healthcheck.check_inner(&config).await;
 
         assert_eq!(result, HealthCheckState::Failed);
     }
@@ -120,7 +124,7 @@ mod tests {
             None,
         );
 
-        let result = healthcheck.check(&config).await;
+        let result = healthcheck.check_inner(&config).await;
 
         assert_eq!(result, HealthCheckState::Ok);
     }
@@ -131,7 +135,7 @@ mod tests {
 
         let config = Http::new(Some("test".to_string()), "not a url".to_string(), None);
 
-        let result = healthcheck.check(&config).await;
+        let result = healthcheck.check_inner(&config).await;
 
         assert_eq!(result, HealthCheckState::Failed);
     }

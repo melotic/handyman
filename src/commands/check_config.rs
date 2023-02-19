@@ -12,39 +12,37 @@ pub fn check_config(config: &str, print_syntax: &bool) -> Result<()> {
         .map_err(|e| Report::msg(e.to_string().trim_end().to_string()))
         .with_context(|| "failed to parse the configuration file")?;
 
-    if let Some(handlers) = config.handlers() {
-        for handler in handlers {
-            let command = handler.command();
+    for handler in config.handlers() {
+        let command = handler.command();
 
-            // Check if the command exists, taking care that there could be arguments passed into it
-            let command = command
-                .split_whitespace()
-                .next()
-                .ok_or_else(|| eyre!("{} is not a valid command", command))?;
+        // Check if the command exists, taking care that there could be arguments passed into it
+        let command = command
+            .split_whitespace()
+            .next()
+            .ok_or_else(|| eyre!("{} is not a valid command", command))?;
 
-            // get the full path
-            let command = which::which(command)
-                .with_context(|| "failed to get the full path of the command")
-                .with_suggestion(|| "ensure that the command exists")?;
+        // get the full path
+        let command = which::which(command)
+            .with_context(|| "failed to get the full path of the command")
+            .with_suggestion(|| "ensure that the command exists")?;
 
-            // check if that file exists
-            if !command.exists() {
-                return Err(eyre!("the command {} does not exist", command.display()))
-                    .with_suggestion(|| "ensure that the command exists");
-            }
+        // check if that file exists
+        if !command.exists() {
+            return Err(eyre!("the command {} does not exist", command.display()))
+                .with_suggestion(|| "ensure that the command exists");
+        }
 
-            // check if the file is executable
-            let metadata = File::open(&command)
-                .with_context(|| "failed to open the command file")
-                .with_suggestion(|| "ensure that the command file exists")?
-                .metadata()
-                .with_context(|| "failed to get the metadata of the command file")
-                .with_suggestion(|| "ensure that the command file exists")?;
+        // check if the file is executable
+        let metadata = File::open(&command)
+            .with_context(|| "failed to open the command file")
+            .with_suggestion(|| "ensure that the command file exists")?
+            .metadata()
+            .with_context(|| "failed to get the metadata of the command file")
+            .with_suggestion(|| "ensure that the command file exists")?;
 
-            if !metadata.permissions().mode() & 0o111 == 0o111 {
-                return Err(eyre!("the command {} is not executable", command.display()))
-                    .with_suggestion(|| "ensure that the command is executable");
-            }
+        if !metadata.permissions().mode() & 0o111 == 0o111 {
+            return Err(eyre!("the command {} is not executable", command.display()))
+                .with_suggestion(|| "ensure that the command is executable");
         }
     }
 
