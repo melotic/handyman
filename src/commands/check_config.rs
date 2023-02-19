@@ -4,12 +4,11 @@ use crate::commands::check_config::eyre::eyre;
 use crate::config::Configuration;
 use color_eyre::{
     eyre::{self, Context},
-    owo_colors::OwoColorize,
     Help, Report, Result,
 };
 
 pub fn check_config(config: &str, print_syntax: &bool) -> Result<()> {
-    let config: Configuration = toml::from_str(&config)
+    let config: Configuration = toml::from_str(config)
         .map_err(|e| Report::msg(e.to_string().trim_end().to_string()))
         .with_context(|| "failed to parse the configuration file")?;
 

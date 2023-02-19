@@ -9,6 +9,25 @@ macro_rules! healthchecks {
                 name: Option<String>,
                 $( $field: $field_type, )*
             }
+
+            impl $healthcheck_name {
+                pub fn new(name: Option<String>, $( $field: $field_type ),*) -> Self {
+                    Self {
+                        name,
+                        $( $field ),*
+                    }
+                }
+
+                pub fn name(&self) -> Option<&String> {
+                    self.name.as_ref()
+                }
+
+                $(
+                    pub fn $field(&self) -> &$field_type {
+                        &self.$field
+                    }
+                )*
+            }
         )*
 
         // Define a Configuration struct that includes each healthcheck
@@ -70,7 +89,7 @@ impl Handler {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub enum HealthCheckState {
     #[serde(rename = "ok")]
     Ok,
@@ -81,6 +100,6 @@ pub enum HealthCheckState {
 healthchecks!(
     Http {
         url: String,
-        timeout: Option<u32>
+        timeout: Option<u64>
     }, http
 );

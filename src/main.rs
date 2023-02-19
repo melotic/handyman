@@ -3,11 +3,11 @@ use std::{fs, process::exit};
 use clap::Parser;
 use color_eyre::{eyre::Context, owo_colors::OwoColorize, Help, Result};
 use commands::systemd;
-use config::Configuration;
 
 pub mod cli;
 pub mod commands;
 pub mod config;
+pub mod service;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

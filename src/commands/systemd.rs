@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::config::Configuration;
 use color_eyre::{eyre::Context, Help, Result};
@@ -9,7 +9,7 @@ const CONFIG_DIR: &str = "/etc/handyman/config.d";
 pub fn run_service() -> Result<()> {
     info!("Starting Handyman service");
 
-    let configurations = read_configs()?;
+    let _configurations = read_configs()?;
 
     Ok(())
 }
@@ -39,10 +39,7 @@ fn read_configs() -> Result<Vec<Configuration>> {
         let entry = match entry {
             Ok(entry) => entry,
             Err(error) => {
-                error!(
-                    "Failed to read configuration directory entry: {error}",
-                    error = error
-                );
+                error!("Failed to read configuration directory entry: {error}",);
                 continue;
             }
         };
@@ -74,8 +71,8 @@ fn read_configs() -> Result<Vec<Configuration>> {
     Ok(configs)
 }
 
-fn try_parse_config(path: &std::path::PathBuf) -> Result<Configuration> {
-    let config = std::fs::read_to_string(&path)
+fn try_parse_config(path: &PathBuf) -> Result<Configuration> {
+    let config = std::fs::read_to_string(path)
         .with_context(|| "failed to read the configuration file")
         .with_suggestion(|| "ensure that the configuration file exists")?;
 
