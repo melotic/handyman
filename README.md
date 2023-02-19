@@ -1,5 +1,8 @@
 # ⚒️ handyman
 
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/melotic/handyman/ci.yml)
+![GitHub](https://img.shields.io/github/license/melotic/handyman)
+
 handyman is a *blazingly fast* health check and automation tool for your infrastructure. Built as an (optional) systemd service, It allows you to configure health checks for your infrastructure and automate actions based on the results of those health checks.
 
 For instance, you can configure handyman to check if a service is running, and if it's not, handyman can automatically restart it for you. This was built for my personal use to automatically restart docker containers when a HTTP check fails.
