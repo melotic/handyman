@@ -35,7 +35,6 @@ fn main() -> Result<()> {
             exit(status.map(|_| 0).unwrap_or(1));
         }
         cli::Command::Systemd => {
-            tracing_subscriber::fmt::init();
             systemd::run_service()?;
         }
     }
