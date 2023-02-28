@@ -1,3 +1,4 @@
+use crate::service::healthcheck::HealthCheckName;
 use serde::Deserialize;
 
 macro_rules! healthchecks {
@@ -18,15 +19,17 @@ macro_rules! healthchecks {
                     }
                 }
 
-                pub fn name(&self) -> Option<&String> {
-                    self.name.as_ref()
-                }
-
                 $(
                     pub fn $field(&self) -> &$field_type {
                         &self.$field
                     }
                 )*
+            }
+
+            impl HealthCheckName for $healthcheck_name {
+                fn name(&self) -> Option<&str> {
+                    self.name.as_deref()
+                }
             }
         )*
 

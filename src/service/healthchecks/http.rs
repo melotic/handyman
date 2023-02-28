@@ -1,12 +1,11 @@
 use std::time::Duration;
 
-use async_trait::async_trait;
-use tracing::{debug, error, info_span, Instrument};
-
 use crate::{
     config::{HealthCheckState, Http},
-    service::healthcheck::HealthCheck,
+    service::healthcheck::{HealthCheck, HealthCheckName},
 };
+use async_trait::async_trait;
+use tracing::{debug, error, info_span, Instrument};
 
 pub struct HttpHealthCheck {
     client: reqwest::Client,

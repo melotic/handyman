@@ -8,3 +8,7 @@ pub trait HealthCheck {
 
     async fn check(&self, config: &Self::Config) -> HealthCheckState;
 }
+
+pub trait HealthCheckName {
+    fn name(&self) -> Option<&str>;
+}

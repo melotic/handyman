@@ -11,6 +11,8 @@ use tokio::{runtime::Builder, time::sleep};
 use tracing::error;
 use tracing::info;
 
+use super::healthcheck::HealthCheckName;
+
 macro_rules! run_healthchecks {
     ($config:ident, $config_name:ident, $healthcheck_name:ident) => {
         if let Some(healthchecks) = $config.$config_name() {
@@ -20,12 +22,10 @@ macro_rules! run_healthchecks {
                 healthchecks.len(),
                 $config.name().unwrap_or("unnamed")
             );
-            let healthcheck = $healthcheck_name::default();
-            let mut results = Vec::with_capacity(healthchecks.len());
 
-            for healthcheck_config in healthchecks {
-                results.push(healthcheck.check(healthcheck_config).await);
-            }
+            let healthcheck = $healthcheck_name::default();
+            let results =
+                get_healthcheck_results(healthcheck, healthchecks, stringify!($config_name)).await;
 
             let any_failed = results
                 .iter()
@@ -98,5 +98,49 @@ async fn run_handler(handler: &Handler) {
 
     if !output.status.success() {
         error!("Command failed: {command}");
+    }
+}
+
+async fn get_healthcheck_results<H: HealthCheck>(
+    healthcheck: H,
+    configs: &[H::Config],
+    name: &str,
+) -> Vec<HealthCheckState>
+where
+    H::Config: HealthCheckName,
+{
+    let mut results = Vec::with_capacity(configs.len());
+
+    for healthcheck_config in configs {
+        // create log span
+        let handler_name = healthcheck_config.name().unwrap_or("unnamed");
+        let span = tracing::info_span!("running", handler_name, name);
+        let _enter = span.enter();
+
+        let check_status = healthcheck.check(healthcheck_config).await;
+        info!("Returned {:?}", check_status);
+
+        results.push(check_status);
+    }
+
+    results
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::Http;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_healthcheck_results() {
+        let healthcheck = HttpHealthCheck::default();
+        let configs = vec![Http::new(
+            Some("test".to_string()),
+            "invalid url".to_string(),
+            Some(1),
+        )];
+        let results = get_healthcheck_results(healthcheck, &configs, "http").await;
+        assert_eq!(results.len(), 1);
     }
 }
