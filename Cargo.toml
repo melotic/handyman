@@ -21,4 +21,4 @@ tracing-subscriber = "0.3.16"
 which = "4.4.0"
 
 [dev-dependencies]
-tempfile = "3.4.0"
+tempfile = "3.5.0"
