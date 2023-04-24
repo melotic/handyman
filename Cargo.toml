@@ -17,7 +17,7 @@ tokio = { version = "1.27.0", features = ["full"] }
 toml = "0.7.3"
 tracing = "0.1.37"
 tracing-journald = "0.3.0"
-tracing-subscriber = "0.3.16"
+tracing-subscriber = "0.3.17"
 which = "4.4.0"
 
 [dev-dependencies]
