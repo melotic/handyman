@@ -67,64 +67,69 @@ impl HealthCheck for HttpHealthCheck {
 mod tests {
     use super::*;
     use crate::config::HealthCheckState;
+    use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
     #[tokio::test]
     async fn test_http_healthcheck() {
-        let healthcheck = HttpHealthCheck::default();
+        let server = MockServer::start().await;
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200))
+            .mount(&server)
+            .await;
 
-        let config = Http::new(
-            Some("test".to_string()),
-            "https://httpstat.us/200".to_string(),
-            None,
-        );
+        let healthcheck = HttpHealthCheck::default();
+        let config = Http::new(Some("test".to_string()), format!("{}/", server.uri()), None);
 
         let result = healthcheck.check_inner(&config).await;
-
         assert_eq!(result, HealthCheckState::Ok);
     }
 
     #[tokio::test]
     async fn test_http_healthcheck_failed() {
-        let healthcheck = HttpHealthCheck::default();
+        let server = MockServer::start().await;
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
 
-        let config = Http::new(
-            Some("test".to_string()),
-            "https://httpstat.us/500".to_string(),
-            None,
-        );
+        let healthcheck = HttpHealthCheck::default();
+        let config = Http::new(Some("test".to_string()), format!("{}/", server.uri()), None);
 
         let result = healthcheck.check_inner(&config).await;
-
         assert_eq!(result, HealthCheckState::Failed);
     }
 
     #[tokio::test]
     async fn test_http_healthcheck_timeout() {
-        let healthcheck = HttpHealthCheck::default();
+        let server = MockServer::start().await;
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(10)))
+            .mount(&server)
+            .await;
 
+        let healthcheck = HttpHealthCheck::default();
         let config = Http::new(
             Some("test".to_string()),
-            "https://httpstat.us/200?sleep=10000".to_string(),
+            format!("{}/", server.uri()),
             Some(1),
         );
 
         let result = healthcheck.check_inner(&config).await;
-
         assert_eq!(result, HealthCheckState::Failed);
     }
 
     #[tokio::test]
     async fn test_http_healthcheck_timeout_disabled() {
-        let healthcheck = HttpHealthCheck::default();
+        let server = MockServer::start().await;
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_millis(100)))
+            .mount(&server)
+            .await;
 
-        let config = Http::new(
-            Some("test".to_string()),
-            "https://httpstat.us/200?sleep=1".to_string(),
-            None,
-        );
+        let healthcheck = HttpHealthCheck::default();
+        let config = Http::new(Some("test".to_string()), format!("{}/", server.uri()), None);
 
         let result = healthcheck.check_inner(&config).await;
-
         assert_eq!(result, HealthCheckState::Ok);
     }
 
