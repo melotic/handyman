@@ -25,14 +25,17 @@ fn main() -> Result<()> {
 
             let status = commands::check_config::check_config(&config_str, print_syntax);
 
-            if status.is_ok() {
-                println!("{config} {ok} ✅", ok = "ok".bold().green());
-            } else {
-                println!("{config} {error} ❌", error = "error".bold().red());
-                println!("{}", status.as_ref().unwrap_err());
+            match &status {
+                Ok(_) => {
+                    println!("{config} {ok} ✅", ok = "ok".bold().green());
+                }
+                Err(e) => {
+                    println!("{config} {error} ❌", error = "error".bold().red());
+                    println!("{e}");
+                }
             }
 
-            exit(status.map(|_| 0).unwrap_or(1));
+            exit(if status.is_ok() { 0 } else { 1 });
         }
         cli::Command::Systemd => {
             systemd::run_service()?;
