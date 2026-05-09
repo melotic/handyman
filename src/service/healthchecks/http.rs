@@ -78,11 +78,7 @@ mod tests {
             .await;
 
         let healthcheck = HttpHealthCheck::default();
-        let config = Http::new(
-            Some("test".to_string()),
-            format!("{}/", server.uri()),
-            None,
-        );
+        let config = Http::new(Some("test".to_string()), format!("{}/", server.uri()), None);
 
         let result = healthcheck.check_inner(&config).await;
         assert_eq!(result, HealthCheckState::Ok);
@@ -97,11 +93,7 @@ mod tests {
             .await;
 
         let healthcheck = HttpHealthCheck::default();
-        let config = Http::new(
-            Some("test".to_string()),
-            format!("{}/", server.uri()),
-            None,
-        );
+        let config = Http::new(Some("test".to_string()), format!("{}/", server.uri()), None);
 
         let result = healthcheck.check_inner(&config).await;
         assert_eq!(result, HealthCheckState::Failed);
@@ -111,10 +103,7 @@ mod tests {
     async fn test_http_healthcheck_timeout() {
         let server = MockServer::start().await;
         Mock::given(any())
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_delay(Duration::from_secs(10)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(10)))
             .mount(&server)
             .await;
 
@@ -133,19 +122,12 @@ mod tests {
     async fn test_http_healthcheck_timeout_disabled() {
         let server = MockServer::start().await;
         Mock::given(any())
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_delay(Duration::from_millis(100)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_millis(100)))
             .mount(&server)
             .await;
 
         let healthcheck = HttpHealthCheck::default();
-        let config = Http::new(
-            Some("test".to_string()),
-            format!("{}/", server.uri()),
-            None,
-        );
+        let config = Http::new(Some("test".to_string()), format!("{}/", server.uri()), None);
 
         let result = healthcheck.check_inner(&config).await;
         assert_eq!(result, HealthCheckState::Ok);
